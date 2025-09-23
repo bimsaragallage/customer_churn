@@ -1,0 +1,1 @@
+['gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure_group', 'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod']

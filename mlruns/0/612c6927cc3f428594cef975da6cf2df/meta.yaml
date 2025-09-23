@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/LENOVO/Downloads/customer_churn/mlruns/0/612c6927cc3f428594cef975da6cf2df/artifacts
+end_time: 1758623438529
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 612c6927cc3f428594cef975da6cf2df
+run_name: RandomForest_SMOTEENN
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1758623350924
+status: 3
+tags: []
+user_id: LENOVO

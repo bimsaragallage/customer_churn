@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/LENOVO/Downloads/customer_churn/mlruns/0/models/m-89103fbd4c3f4bdcbaa51e410a130b53/artifacts
+creation_timestamp: 1758625016809
+experiment_id: '0'
+last_updated_timestamp: 1758625026678
+model_id: m-89103fbd4c3f4bdcbaa51e410a130b53
+model_type: null
+name: model
+source_run_id: 10a04578d54c43c3a77d120970c622c4
+status: 2
+status_message: null

@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/LENOVO/Downloads/customer_churn/mlruns/0/models/m-dc06c14e1a7e443b8be532941f1c1ec9/artifacts
+creation_timestamp: 1758624759154
+experiment_id: '0'
+last_updated_timestamp: 1758624769060
+model_id: m-dc06c14e1a7e443b8be532941f1c1ec9
+model_type: null
+name: random_forest_model
+source_run_id: 9d25933e947347f9baadfd738a19711b
+status: 2
+status_message: null

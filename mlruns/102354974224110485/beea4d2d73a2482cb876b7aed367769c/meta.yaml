@@ -1,0 +1,14 @@
+artifact_uri: file:///c:/Users/Bim/Downloads/customer_churn/mlruns/102354974224110485/beea4d2d73a2482cb876b7aed367769c/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '102354974224110485'
+lifecycle_stage: active
+run_id: beea4d2d73a2482cb876b7aed367769c
+run_name: RandomForest_SMOTEENN
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1758644769334
+status: 1
+tags: []
+user_id: Bim
