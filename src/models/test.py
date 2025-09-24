@@ -13,7 +13,7 @@ MODEL_DIR = os.path.join(PROJECT_ROOT, "models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 mlruns_path = os.path.join(PROJECT_ROOT, "mlruns")
-mlflow.set_tracking_uri(f"file:///{mlruns_path.replace(os.sep, '/')}")
+mlflow.set_tracking_uri("file:./mlruns")
 
 MODEL_NAME = "CustomerChurn_RF"
 client = MlflowClient()
