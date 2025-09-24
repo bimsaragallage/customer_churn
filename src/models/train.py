@@ -18,17 +18,30 @@ import mlflow.sklearn
 # -----------------------------
 TARGET_COL = "Churn"
 
+# Root of the repo (current repo path)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+
+# Paths relative to repo
 TRAIN_PATH = os.path.join(PROJECT_ROOT, "datasets", "train", "train.csv")
 TEST_PATH  = os.path.join(PROJECT_ROOT, "datasets", "test", "test.csv")
 MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "rf_smoteenn_model.joblib")
-mlruns_path = os.path.join(PROJECT_ROOT, "mlruns")
+MLRUNS_PATH = os.path.join(PROJECT_ROOT, "mlruns")
 
-# Tracking URI
-mlflow.set_tracking_uri(f"file:///{mlruns_path.replace(os.sep, '/')}")
-mlflow.set_experiment("CustomerChurn_RF")   # group runs into experiment
+# Ensure directories exist
+os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+os.makedirs(os.path.dirname(MLRUNS_PATH), exist_ok=True)
+
+# -----------------------------
+# MLflow Tracking URI
+# -----------------------------
+# Use absolute path, portable for Linux and Windows
+mlflow.set_tracking_uri(f"file://{os.path.abspath(MLRUNS_PATH)}")
+mlflow.set_experiment("CustomerChurn_RF")
 print("Tracking URI:", mlflow.get_tracking_uri())
 
+# -----------------------------
+# Feature columns
+# -----------------------------
 NUMERIC_COLS = ["MonthlyCharges", "TotalCharges"]
 CATEGORICAL_COLS = [
     'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure_group',
@@ -78,12 +91,14 @@ PARAM_GRID = {
     'classifier__criterion': ['gini', 'entropy']
 }
 
+# -----------------------------
+# Train function
+# -----------------------------
 def train_model():
     print("Training Random Forest with SMOTE+ENN and GridSearchCV...")
 
-    # Start MLflow run
     with mlflow.start_run(run_name="RandomForest_SMOTEENN"):
-        # Log input feature info
+        # Log feature info
         mlflow.log_param("numeric_features", NUMERIC_COLS)
         mlflow.log_param("categorical_features", CATEGORICAL_COLS)
 
@@ -101,36 +116,27 @@ def train_model():
 
         best_model = grid_search.best_estimator_
 
-        # -----------------------------
         # Evaluate on test set
-        # -----------------------------
         y_pred = best_model.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
         f1_macro = classification_report(y_test, y_pred, output_dict=True)['macro avg']['f1-score']
 
-        # -----------------------------
         # Log hyperparameters and metrics
-        # -----------------------------
         mlflow.log_params(grid_search.best_params_)
         mlflow.log_metric("accuracy", acc)
         mlflow.log_metric("f1_macro", f1_macro)
         mlflow.log_metric("train_time_seconds", train_time)
 
-        # -----------------------------
-        # Log model + register
-        # -----------------------------
+        # Log model and register
         model_name = "CustomerChurn_RF"
         mlflow.sklearn.log_model(
             sk_model=best_model,
-            name="model",
+            artifact_path="model",
             registered_model_name=model_name
         )
 
-        # -----------------------------
         # Save model locally too
-        # -----------------------------
-        #os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-        #joblib.dump(best_model, MODEL_PATH)
+        joblib.dump(best_model, MODEL_PATH)
 
         print(f"✅ Training complete!")
         print("Accuracy:", acc)
@@ -141,5 +147,8 @@ def train_model():
         print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
         print(f"Model saved locally at {MODEL_PATH} and logged to MLflow.")
 
+# -----------------------------
+# Run training
+# -----------------------------
 if __name__ == "__main__":
     train_model()
