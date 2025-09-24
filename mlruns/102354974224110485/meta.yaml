@@ -1,6 +1,0 @@
-artifact_location: file:///c:/Users/Bim/Downloads/customer_churn/mlruns/102354974224110485
-creation_time: 1758644768570
-experiment_id: '102354974224110485'
-last_update_time: 1758644768570
-lifecycle_stage: active
-name: CustomerChurn_RF
