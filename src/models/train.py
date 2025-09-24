@@ -132,15 +132,13 @@ def train_model():
         mlflow.log_metric("f1_macro", f1_macro)
         mlflow.log_metric("train_time_seconds", train_time)
 
-        # Log model and register
-        model_name = "CustomerChurn_RF"
+        # Log model (no registry in CI)
         mlflow.sklearn.log_model(
             sk_model=best_model,
-            artifact_path="model",
-            registered_model_name=model_name
+            artifact_path="model"
         )
-
-        # Save model locally too
+        
+        # Optional: save a copy with a clear name for CI/CD use
         joblib.dump(best_model, MODEL_PATH)
 
         print(f"✅ Training complete!")
