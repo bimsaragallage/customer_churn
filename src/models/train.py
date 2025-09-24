@@ -12,6 +12,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import mlflow
 import mlflow.sklearn
+import platform
 
 # -----------------------------
 # Config
@@ -28,14 +29,18 @@ MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "rf_smoteenn_model.joblib")
 MLRUNS_PATH = os.path.join(PROJECT_ROOT, "mlruns")
 
 # Ensure directories exist
-os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-os.makedirs(os.path.dirname(MLRUNS_PATH), exist_ok=True)
+os.makedirs(MLRUNS_PATH, exist_ok=True)
+
+# Portable URI
+if platform.system() == "Windows":
+    mlflow_uri = f"file:///{os.path.abspath(MLRUNS_PATH).replace(os.sep, '/')}"
+else:
+    mlflow_uri = f"file://{os.path.abspath(MLRUNS_PATH)}"
 
 # -----------------------------
 # MLflow Tracking URI
 # -----------------------------
-# Use absolute path, portable for Linux and Windows
-mlflow.set_tracking_uri(f"file://{os.path.abspath(MLRUNS_PATH)}")
+mlflow.set_tracking_uri(mlflow_uri)
 mlflow.set_experiment("CustomerChurn_RF")
 print("Tracking URI:", mlflow.get_tracking_uri())
 
