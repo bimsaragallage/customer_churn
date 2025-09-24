@@ -1,8 +1,9 @@
 # src/models/train.py
 import os
 import time
-import pandas as pd
+import platform
 import joblib
+import pandas as pd
 from sklearn.model_selection import GridSearchCV
 from imblearn.combine import SMOTEENN
 from imblearn.pipeline import Pipeline as ImbPipeline
@@ -12,37 +13,41 @@ from sklearn.compose import ColumnTransformer
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import mlflow
 import mlflow.sklearn
-import platform
 
 # -----------------------------
 # Config
 # -----------------------------
 TARGET_COL = "Churn"
 
-# Root of the repo (current repo path)
+# Project root (repo root, 2 levels up from this file)
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 
-# Paths relative to repo
+# Dataset & model paths
 TRAIN_PATH = os.path.join(PROJECT_ROOT, "datasets", "train", "train.csv")
 TEST_PATH  = os.path.join(PROJECT_ROOT, "datasets", "test", "test.csv")
 MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "rf_smoteenn_model.joblib")
 MLRUNS_PATH = os.path.join(PROJECT_ROOT, "mlruns")
 
 # Ensure directories exist
+os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
 os.makedirs(MLRUNS_PATH, exist_ok=True)
 
-# Portable URI
+# Portable MLflow tracking URI
 if platform.system() == "Windows":
-    mlflow_uri = f"file:///{os.path.abspath(MLRUNS_PATH).replace(os.sep, '/')}"
+    MLFLOW_URI = f"file:///{os.path.abspath(MLRUNS_PATH).replace(os.sep, '/')}"
 else:
-    mlflow_uri = f"file://{os.path.abspath(MLRUNS_PATH)}"
+    MLFLOW_URI = f"file://{os.path.abspath(MLRUNS_PATH)}"
 
 # -----------------------------
-# MLflow Tracking URI
+# MLflow Setup
 # -----------------------------
-mlflow.set_tracking_uri(mlflow_uri)
-mlflow.set_experiment("CustomerChurn_RF")
-print("Tracking URI:", mlflow.get_tracking_uri())
+mlflow.set_tracking_uri(MLFLOW_URI)
+
+# Explicitly create/set experiment
+EXPERIMENT_NAME = "CustomerChurn_RF"
+mlflow.set_experiment(EXPERIMENT_NAME)
+print("🔗 Tracking URI:", mlflow.get_tracking_uri())
+print("🧪 Experiment:", EXPERIMENT_NAME)
 
 # -----------------------------
 # Feature columns
@@ -56,18 +61,16 @@ CATEGORICAL_COLS = [
 ]
 
 # -----------------------------
-# Load cleaned train/test
+# Load train/test datasets
 # -----------------------------
 train_df = pd.read_csv(TRAIN_PATH)
 test_df  = pd.read_csv(TEST_PATH)
 
-X_train = train_df.drop(TARGET_COL, axis=1)
-y_train = train_df[TARGET_COL]
-X_test  = test_df.drop(TARGET_COL, axis=1)
-y_test  = test_df[TARGET_COL]
+X_train, y_train = train_df.drop(TARGET_COL, axis=1), train_df[TARGET_COL]
+X_test,  y_test  = test_df.drop(TARGET_COL, axis=1), test_df[TARGET_COL]
 
 # -----------------------------
-# Preprocessor inside pipeline
+# Preprocessor
 # -----------------------------
 preprocessor = ColumnTransformer(
     transformers=[
@@ -86,7 +89,7 @@ pipeline = ImbPipeline([
 ])
 
 # -----------------------------
-# Hyperparameter tuning
+# Hyperparameter grid
 # -----------------------------
 PARAM_GRID = {
     'classifier__n_estimators': [100, 200],
@@ -100,17 +103,18 @@ PARAM_GRID = {
 # Train function
 # -----------------------------
 def train_model():
-    print("Training Random Forest with SMOTE+ENN and GridSearchCV...")
+    print("🚀 Training Random Forest with SMOTE+ENN and GridSearchCV...")
 
     with mlflow.start_run(run_name="RandomForest_SMOTEENN"):
-        # Log feature info
+        # Log dataset/feature info
         mlflow.log_param("numeric_features", NUMERIC_COLS)
         mlflow.log_param("categorical_features", CATEGORICAL_COLS)
 
+        # Hyperparameter tuning
         start_time = time.time()
         grid_search = GridSearchCV(
-            pipeline,
-            PARAM_GRID,
+            estimator=pipeline,
+            param_grid=PARAM_GRID,
             scoring='f1_macro',
             cv=3,
             n_jobs=-1,
@@ -121,34 +125,36 @@ def train_model():
 
         best_model = grid_search.best_estimator_
 
-        # Evaluate on test set
+        # Predictions
         y_pred = best_model.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
-        f1_macro = classification_report(y_test, y_pred, output_dict=True)['macro avg']['f1-score']
+        f1_macro = classification_report(
+            y_test, y_pred, output_dict=True
+        )['macro avg']['f1-score']
 
-        # Log hyperparameters and metrics
+        # Log best params & metrics
         mlflow.log_params(grid_search.best_params_)
         mlflow.log_metric("accuracy", acc)
         mlflow.log_metric("f1_macro", f1_macro)
         mlflow.log_metric("train_time_seconds", train_time)
 
-        # Log model (no registry in CI)
+        # Save model
         mlflow.sklearn.log_model(
             sk_model=best_model,
             artifact_path="model"
         )
-        
-        # Optional: save a copy with a clear name for CI/CD use
         joblib.dump(best_model, MODEL_PATH)
 
-        print(f"✅ Training complete!")
-        print("Accuracy:", acc)
-        print("F1 Macro:", f1_macro)
-        print("Training Time (s):", round(train_time, 2))
-        print("Best Params:", grid_search.best_params_)
-        print("Classification Report:\n", classification_report(y_test, y_pred))
+        # Print results
+        print("\n✅ Training complete!")
+        print(f"Best Params: {grid_search.best_params_}")
+        print(f"Accuracy: {acc:.4f}")
+        print(f"F1 Macro: {f1_macro:.4f}")
+        print(f"Training Time: {train_time:.2f} sec")
+        print("\nClassification Report:\n", classification_report(y_test, y_pred))
         print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-        print(f"Model saved locally at {MODEL_PATH} and logged to MLflow.")
+        print(f"\n💾 Model saved at {MODEL_PATH}")
+        print(f"📂 MLflow run stored in: {MLRUNS_PATH}")
 
 # -----------------------------
 # Run training
